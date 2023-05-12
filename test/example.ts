@@ -1,5 +1,8 @@
 /* eslint-disable no-console */
 import letterboxd from "../index";
+// import type {RssItem} from '../src/letterboxd'
+import type {Diary, List, RssItem, Letterboxd} from '../src/letterboxd'
+
 
 letterboxd("zeromero")
 //@ts-ignore

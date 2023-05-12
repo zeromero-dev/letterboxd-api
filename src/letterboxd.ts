@@ -1,9 +1,9 @@
 import fetch from "node-fetch";
-import cheerio from "cheerio";
+import { load } from "cheerio";
 import z from "zod"
 
 
-function isListItem(element): boolean {
+function isListItem(element: JQuery<HTMLElement>): boolean {
   // if the list path is in the url
   if (getUri(element).includes("/list/")) {
     return true;
@@ -12,60 +12,66 @@ function isListItem(element): boolean {
   return false;
 }
 
-function getPublishedDate(element): number{
+function getPublishedDate(element: JQuery<HTMLElement>): number{
   return +new Date(element.find("pubDate").text());
 }
 
-function getWatchedDate(element): number{
+function getWatchedDate(element: JQuery<HTMLElement>): number{
   return +new Date(element.find("letterboxd\\:watchedDate").text());
 }
 
-function getUri(element) {
+function getUri(element: JQuery<HTMLElement>) {
   return element.find("link").html();
 }
 
-function getTitleData(element): string {
+function getTitleData(element: JQuery<HTMLElement>): string {
   return element.find("title").text();
 }
 
-function getTitle(element): string{
+function getTitle(element: JQuery<HTMLElement>): string{
   return element.find("letterboxd\\:filmTitle").text();
 }
 
-function getYear(element): string {
+function getYear(element: JQuery<HTMLElement>): string {
   return element.find("letterboxd\\:filmYear").text();
 }
 
-function getMemberRating(element): string {
+function getMemberRating(element: JQuery<HTMLElement>): string {
   return element.find("letterboxd\\:memberRating").text();
 }
 
-function getSpoilers(element): boolean{
+function getSpoilers(element: JQuery<HTMLElement>): boolean{
   const titleData = getTitleData(element);
 
   const containsSpoilersString = "(contains spoilers)";
   return titleData.includes(containsSpoilersString);
 }
 
-function getIsRewatch(element): boolean {
+function getIsRewatch(element: JQuery<HTMLElement>): boolean {
   const rewatchData = element.find("letterboxd\\:rewatch").text();
   return rewatchData === "Yes";
 }
 
 const ratingSchema = z.object({
   text: z.string(),
-  score: z.number(),
+  score: z.number()
 });
-
 export type Rating = z.infer<typeof ratingSchema>;
 
 
-function getRating(element) {
+function getRating(element: JQuery<HTMLElement>) {
   const memberRating = getMemberRating(element).toString();
 
-  const rating: Rating = {};
+  const rating: Rating = {
+    text: "",
+    score: 0,
+  };
 
-  const scoreToTextMap = {
+  interface ScoreToTextMap {
+    [key: string]: string;
+  }
+
+  const scoreToTextMap: ScoreToTextMap = {
     "-1.0": "None",
     0.5: "½",
     "1.0": "★",
@@ -81,21 +87,21 @@ function getRating(element) {
 
   rating.text = scoreToTextMap[memberRating];
   rating.score = parseFloat(memberRating);
-
+  
   return rating;
 }
 
 const getImageSchema = z.object({
-  tiny: z.string(),
-  small: z.string(),
-  medium: z.string(),
-  large: z.string(),
+  tiny: z.string().optional(),
+  small: z.string().optional(),
+  medium: z.string().optional(),
+  large: z.string().optional(),
 });
 export type Image = z.infer<typeof getImageSchema>;
 
-function getImage(element): Image {
+function getImage(element: JQuery<HTMLElement>): Image {
   const description = element.find("description").text();
-  const $ = cheerio.load(description);
+  const $ = load(description);
 
   // find the film poster and grab it's src
   const image = $("p img").attr("src");
@@ -114,10 +120,10 @@ function getImage(element): Image {
   };
 }
 
-function getReview(element): string {
+function getReview(element: JQuery<HTMLElement>): string {
   const description = element.find("description").text();
 
-  const $ = cheerio.load(description);
+  const $ = load(description);
 
   const reviewParagraphs = $("p");
 
@@ -157,23 +163,41 @@ const listFilms = z.object({
 
 export type ListFilms = z.infer<typeof listFilms>;
 
-function getListFilms(element): ListFilms[]{
-  const description = element.find("description").text();
-  const $ = cheerio.load(description);
+// function getListFilms(element: JQuery<HTMLElement>): ListFilms[]{
+//   const description = element.find("description").text();
+//   const $ = load(description);
 
-  const films = [];
+//   const films: ListFilms[] = [];
+//   $("li a").each((i, filmElement) => {
+//     films.push({
+//       title: $(filmElement).text(),
+//       uri: $(filmElement).attr("href"),
+//     });
+//   });
+//   return films;
+// }
+function getListFilms(element: JQuery<HTMLElement>): ListFilms[] {
+  const description = element.find("description").text();
+  const $ = load(description);
+
+  const films: ListFilms[] = [];
+
   $("li a").each((i, filmElement) => {
-    films.push({
-      title: $(filmElement).text(),
-      uri: $(filmElement).attr("href"),
-    });
+    const href = $(filmElement).attr("href");
+    if (href) {
+      films.push({
+        title: $(filmElement).text(),
+        uri: href,
+      });
+    }
   });
+
   return films;
 }
 
-function getListDescription(element): string {
+function getListDescription(element: JQuery<HTMLElement>): string {
   const description = element.find("description").text();
-  const $ = cheerio.load(description);
+  const $ = load(description);
 
   let result = "";
 
@@ -196,9 +220,9 @@ function getListDescription(element): string {
   return result;
 }
 
-function getListTotalFilms(element): number {
+function getListTotalFilms(element: JQuery<HTMLElement>): number {
   const description = element.find("description").text();
-  const $ = cheerio.load(description);
+  const $ = load(description);
 
   const films = getListFilms(element);
 
@@ -237,48 +261,88 @@ function getListTotalFilms(element): number {
   return result;
 }
 
-function isListRanked(element): boolean {
+function isListRanked(element: JQuery<HTMLElement>): boolean {
   const description = element.find("description").text();
-  const $ = cheerio.load(description);
+  const $ = load(description);
 
   const isOrderedListPresent = !!$("ol").length;
   return isOrderedListPresent;
 }
 
-const processedItem = z.object({
-  type: z.literal("list").or(z.literal("diary")),
+// const processedItem = z.object({
+//   type: z.literal("list").or(z.literal("diary")),
+//   date: z.object({
+//     published: z.number(),
+//     watched: z.number().optional(),
+//   }),
+//   title: z.string(),
+//   description: z.string(),
+//   ranked: z.boolean(),
+//   films: z.array(
+//     z.object({
+//       title: z.string(),
+//       uri: z.string(),
+//     })
+//   ).optional(),
+//   totalFilms: z.number().optional(),
+//   uri: z.string(),
+//   film: z.object({
+//     title: z.string(),
+//     year: z.string().optional(),
+//     image: getImageSchema.optional(),
+//   }).optional(),
+//   rating: z.object({
+//     text: z.string(),
+//     score: z.number(),
+//   }).optional(),
+//   review: z.string().optional(),
+//   spoilers: z.boolean().optional(),
+//   isRewatch: z.boolean().optional()
+// });
+
+// export type ProcessedItem = z.infer<typeof processedItem>;
+
+const List = z.object({
+  type: z.literal("list"),
   date: z.object({
     published: z.number(),
-    watched: z.number().optional(),
   }),
   title: z.string(),
   description: z.string(),
   ranked: z.boolean(),
-  films: z.array(
-    z.object({
+  films: z.array(z.object({
       title: z.string(),
       uri: z.string(),
-    })
-  ).optional(),
-  totalFilms: z.number().optional(),
-  uri: z.string(),
+    })),
+  totalFilms: z.number(),
+  uri: z.string()
+});
+
+const diary = z.object({
+  type: z.literal("diary"),
+  date: z.object({
+    published: z.number(),
+    watched: z.number(),
+  }),
   film: z.object({
     title: z.string(),
     year: z.string().optional(),
     image: getImageSchema.optional(),
-  }).optional(),
+  }),
   rating: z.object({
     text: z.string(),
     score: z.number(),
-  }).optional(),
+  }),
   review: z.string().optional(),
   spoilers: z.boolean().optional(),
-  isRewatch: z.boolean().optional()
+  isRewatch: z.boolean().optional(),
+  uri: z.string()
 });
 
-export type ProcessedItem = z.infer<typeof processedItem>;
+export type Diary = z.infer<typeof diary>;
+export type List = z.infer<typeof List>;
 
-function processItem(element): ProcessedItem {
+function processItem(element: JQuery<HTMLElement>): List | Diary {
   // there are two types of items: lists and diary entries
   if (isListItem(element)) {
     return {
@@ -307,6 +371,7 @@ function processItem(element): ProcessedItem {
       year: getYear(element),
       image: getImage(element),
     },
+    // title: getTitleData(element),
     rating: getRating(element),
     review: getReview(element),
     spoilers: getSpoilers(element),
@@ -319,7 +384,17 @@ function invalidUsername(username: string): boolean{
   return !username || username.trim().length <= 0;
 }
 
-function getDiaryData(username: string): Promise<string[]> {
+const rssItemSchema = z.object({
+  title: z.string(),
+  link: z.string(),
+  pubDate: z.string(),
+  creator: z.string(),
+  guid: z.string(),
+  description: z.string(),
+});
+export type RssItem = z.infer<typeof rssItemSchema>;
+
+function getDiaryData(username: string) {
   const uri = `https://letterboxd.com/${username}/rss/`;
 
   return fetch(uri)
@@ -336,19 +411,23 @@ function getDiaryData(username: string): Promise<string[]> {
       return response.text();
     })
     .then((xml) => {
-      const $ = cheerio.load(xml, { xmlMode: true });
-
+      const $ = load(xml, { xmlMode: true });
+      //@ts-ignore
       const items = [];
 
       $("item").each((i, element) => {
+      //@ts-ignore
         items[i] = processItem($(element));
       });
 
+      //@ts-ignore
       return items;
     });
 }
 
-function letterboxd(username: string) {
+export type Letterboxd = Diary | List;
+
+function letterboxd(username: string): Promise<Letterboxd[]> {
   if (invalidUsername(username)) {
     return Promise.reject(new Error("No username sent as a parameter"));
   }

@@ -7,7 +7,7 @@
   },
   "scripts": {
     "prettier": "prettier --write .",
-    "example": "npx ts-node --esm example.ts",
+    "example": "npx ts-node --esm test/example.ts",
     "pretest": "npm run example && npm run prettier && npm run lint",
     "test": "npm run test:js",
     "test:js": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
@@ -24,6 +24,8 @@
   "author": "zac <hi@zaccolley.com> (http://zac.land/)",
   "license": "ISC",
   "dependencies": {
+    "@types/jquery": "^3.5.16",
+    "@types/node-fetch": "^2.6.3",
     "cheerio": "^1.0.0-rc.10",
     "node-fetch": "^2.6.6",
     "zod": "^3.21.4"

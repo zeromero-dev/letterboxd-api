@@ -30,24 +30,3 @@ function logItems(items: Letterboxd[]) {
 
   console.log("");
 }
-
-// function logItems(items: Letterboxd[]) {
-//   const diaryEntries = items.filter((item) => item.type === "diary");
-//   const lists = items.filter((item) => item.type === "list");
-
-//   console.log("");
-
-//   console.log(`Diary entries (${diaryEntries.length}):\n`);
-
-//   diaryEntries.map((diaryEntry) => {
-//     console.log(`  + ${diaryEntry.film} (${diaryEntry.uri})\n`);
-//   });
-
-//   console.log(`\nLists (${lists.length}):\n`);
-
-//   lists.map((list) => {
-//     console.log(`  + ${list.title} (${list.uri})\n`);
-//   });
-
-//   console.log("");
-// }

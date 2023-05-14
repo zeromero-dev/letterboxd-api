@@ -4,6 +4,12 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "module": "esm/index.js",
+  "files": [
+    "dist",
+    "esm",
+    "src"
+  ],
   "engines": {
     "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
   },
@@ -22,9 +28,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/zactopus/letterboxd.git"
+    "url": "https://github.com/zeromero-dev/letterboxd-api"
   },
-  "author": "zac <hi@zaccolley.com> (http://zac.land/)",
+  "author": "Roman <spiderr.roma@gmail.com> (https://zeromero.xyz/)",
   "license": "ISC",
   "dependencies": {
     "cheerio": "^1.0.0-rc.10",

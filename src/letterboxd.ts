@@ -1,7 +1,7 @@
+import z from "zod";
 import fetch from "node-fetch";
 import { load } from "cheerio";
-import z from "zod";
-// import { CheerioAPI } from '@types/cheerio';
+
 
 function isListItem(element: cheerio.Cheerio): boolean {
   // if the list path is in the url

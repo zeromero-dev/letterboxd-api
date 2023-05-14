@@ -8,7 +8,7 @@
     "paths": {
       "@/*": ["src/*"]
     },
-    // "outDir": "./dist",
+    "outDir": "./dist",
     "declaration": true
     // "moduleResolution": "node"
   },

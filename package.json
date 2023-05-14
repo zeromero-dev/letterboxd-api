@@ -1,10 +1,9 @@
 {
-  "name": "letterboxd",
+  "name": "letterboxd-api",
   "description": "get public diary data for letterboxd users",
-  "version": "1.0.0",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "module": "esm/index.js",
+  "version": "1.0.1",
+  "main": "dist/letterboxd.js",
+  "types": "dist/letterboxd.d.ts",
   "files": [
     "dist",
     "esm",

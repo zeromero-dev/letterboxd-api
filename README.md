@@ -1,29 +1,71 @@
-# letterboxd
+# letterboxd-api
 
-[![npm](https://img.shields.io/npm/v/letterboxd.svg)](https://www.npmjs.com/package/letterboxd)
+[![npm](https://img.shields.io/npm/v/letterboxd-api.svg)](https://www.npmjs.com/package/letterboxd-api)
 
 get public data for letterboxd users
 
 _currently only consumes the RSS feeds from letterboxd, when API is released this will be used_
 
+This project is not affiliated with letterboxd
+
+It's also a fork of [letterboxd](https://www.npmjs.com/package/letterboxd) by [zaccolley](https://www.npmjs.com/~zaccolley) with added support for typescript
+
+Much love for the original author <3
+
 ## installation
 
 ```bash
-npm install letterboxd --save
+npm install letterboxd-api
 ```
 
-## usage
+## Usage
 
 ### function(username, [callback])
 
 Returns a promise if no callback is provided.
 
 ```javascript
-import letterboxd from "letterboxd";
+import letterboxd from "letterboxd-api";
 
-letterboxd("rubencordeiro")
+letterboxd("zeromero")
   .then((items) => console.log(items))
   .catch((error) => console.log(error));
+```
+
+**Example using typescript**
+
+```ts
+import letterboxd from "../index";
+import type { Letterboxd } from "../src/letterboxd";
+
+letterboxd("zeromero")
+  .then((items) => logItems(items))
+  .catch((error) => console.log(error));
+
+function logItems(items: Letterboxd[]) {
+  const diaryEntries = items.filter((item) => item.type === "diary");
+  const lists = items.filter((item) => item.type === "list");
+
+  console.log("");
+
+  console.log(`Diary entries (${diaryEntries.length}):\n`);
+
+  diaryEntries.map((diaryEntry) => {
+    if ("film" in diaryEntry) {
+      console.log(`  + ${diaryEntry.film.title} (${diaryEntry.uri})\n`);
+    }
+  });
+
+  console.log(`\nLists (${lists.length}):\n`);
+
+  lists.map((list) => {
+    if ("title" in list) {
+      console.log(`  + ${list.title} (${list.uri})\n`);
+    }
+  });
+
+  console.log("");
+}
 ```
 
 #### output
@@ -83,4 +125,54 @@ items of note for the list type:
   },
   //...
 ];
+```
+
+#### types
+
+```ts
+type Diary = {
+  type: "diary";
+  date: {
+    published: number;
+    watched: number;
+  };
+  film: {
+    title: string;
+    year?: string;
+    image?: ImageSchema;
+  };
+  rating: {
+    text: string;
+    score: number;
+  };
+  review?: string;
+  spoilers?: boolean;
+  isRewatch?: boolean;
+  uri: string;
+};
+
+type List = {
+  type: "list";
+  date: {
+    published: number;
+  };
+  title: string;
+  description: string;
+  ranked: boolean;
+  films: {
+    title: string;
+    uri: string;
+  }[];
+  totalFilms: number;
+  uri: string;
+};
+
+type ImageSchema = {
+  tiny?: string;
+  small?: string;
+  medium?: string;
+  large?: string;
+};
+
+type Letterboxd = Diary | List;
 ```

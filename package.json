@@ -1,34 +1,50 @@
 {
-  "name": "letterboxd",
+  "name": "letterboxd-api",
   "description": "get public diary data for letterboxd users",
-  "exports": "./index.js",
-  "type": "module",
+  "version": "1.0.1",
+  "main": "dist/letterboxd.js",
+  "types": "dist/letterboxd.d.ts",
+  "files": [
+    "dist",
+    "esm",
+    "src"
+  ],
   "engines": {
     "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
   },
   "scripts": {
     "prettier": "prettier --write .",
-    "example": "node test/example.js",
-    "pretest": "npm run example && npm run prettier && npm run lint",
+    "example": "npx ts-node --esm test/example.ts",
+    "prepublish": "npm run example && npm run prettier && npm run lint",
     "test": "npm run test:js",
     "test:js": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "test:watch": "npm run test:js -- --watch",
-    "lint": "eslint . --config .eslintrc.json"
+    "lint": "eslint . --config .eslintrc.json",
+    "build": "tsc"
   },
   "keywords": [
     "letterboxd"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/zactopus/letterboxd.git"
+    "url": "https://github.com/zeromero-dev/letterboxd-api"
   },
-  "author": "zac <hi@zaccolley.com> (http://zac.land/)",
+  "author": "Roman <spiderr.roma@gmail.com> (https://zeromero.xyz/)",
   "license": "ISC",
   "dependencies": {
     "cheerio": "^1.0.0-rc.10",
-    "node-fetch": "^2.6.6"
+    "node-fetch": "^2.6.6",
+    "zod": "^3.21.4"
   },
   "devDependencies": {
+    "@babel/core": "^7.21.8",
+    "@babel/preset-env": "^7.21.5",
+    "@babel/preset-typescript": "^7.21.5",
+    "@types/cheerio": "^0.22.31",
+    "@types/jest": "^29.5.1",
+    "@types/jquery": "^3.5.16",
+    "@types/node-fetch": "^2.6.3",
+    "babel-jest": "^29.5.0",
     "cross-env": "7.0.3",
     "eslint": "8.31.0",
     "eslint-config-prettier": "8.5.0",
@@ -38,7 +54,8 @@
     "jest": "29.3.1",
     "nock": "13.2.9",
     "prettier": "2.8.1",
-    "semantic-release": "19.0.5"
+    "semantic-release": "19.0.5",
+    "typescript": "^5.0.4"
   },
   "release": {
     "branches": [

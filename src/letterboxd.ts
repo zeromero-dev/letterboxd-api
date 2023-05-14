@@ -384,16 +384,6 @@ function invalidUsername(username: string): boolean{
   return !username || username.trim().length <= 0;
 }
 
-const rssItemSchema = z.object({
-  title: z.string(),
-  link: z.string(),
-  pubDate: z.string(),
-  creator: z.string(),
-  guid: z.string(),
-  description: z.string(),
-});
-export type RssItem = z.infer<typeof rssItemSchema>;
-
 function getDiaryData(username: string) {
   const uri = `https://letterboxd.com/${username}/rss/`;
 

@@ -1,7 +1,9 @@
 {
-    "compilerOptions": {
-        "esModuleInterop": true,
-        "module": "commonjs",
-        "strict": true
-    }
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "module": "CommonJS",
+    "target": "ES2021",
+    "strict": true,
+    "moduleResolution":"node"
+  }
 }

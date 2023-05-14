@@ -167,8 +167,24 @@ describe("letterboxd", () => {
     nock.restore();
   });
 
-  it("should return an error if the username is null", () => {
-    const username = null;
+  // it("should return an error if the username is null", () => {
+  //   const username = null;
+
+  //   return letterboxd(username).catch((e) => {
+  //     expect(e.message).toEqual("No username sent as a parameter");
+  //   });
+  // });
+  
+  it("should return an error if username is not passed", () => {
+    //@ts-expect-error
+    return letterboxd().catch((e) => {
+      expect(e.message).toEqual("No username sent as a parameter");
+    });
+  });
+
+
+  it("should return an error if the username is empty string", () => {
+    const username = "";
 
     return letterboxd(username).catch((e) => {
       expect(e.message).toEqual("No username sent as a parameter");

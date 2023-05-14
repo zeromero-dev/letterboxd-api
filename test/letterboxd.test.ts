@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 import nock from "nock";
 
 import letterboxd from "../index.js";
-
+//@ts-ignore
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const expectedItems = [
@@ -167,21 +167,20 @@ describe("letterboxd", () => {
     nock.restore();
   });
 
-  // it("should return an error if the username is null", () => {
-  //   const username = null;
+  it("should return an error if the username is null", () => {
+    const username = null;
+    //@ts-expect-error
+    return letterboxd(username).catch((e) => {
+      expect(e.message).toEqual("No username sent as a parameter");
+    });
+  });
 
-  //   return letterboxd(username).catch((e) => {
-  //     expect(e.message).toEqual("No username sent as a parameter");
-  //   });
-  // });
-  
   it("should return an error if username is not passed", () => {
     //@ts-expect-error
     return letterboxd().catch((e) => {
       expect(e.message).toEqual("No username sent as a parameter");
     });
   });
-
 
   it("should return an error if the username is empty string", () => {
     const username = "";

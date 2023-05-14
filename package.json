@@ -7,7 +7,7 @@
   "scripts": {
     "prettier": "prettier --write .",
     "example": "npx ts-node --esm test/example.ts",
-    "pretest": "npm run example && npm run prettier && npm run lint",
+    "prepublish": "npm run example && npm run prettier && npm run lint",
     "test": "npm run test:js",
     "test:js": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "test:watch": "npm run test:js -- --watch",
@@ -28,10 +28,14 @@
     "zod": "^3.21.4"
   },
   "devDependencies": {
+    "@babel/core": "^7.21.8",
+    "@babel/preset-env": "^7.21.5",
+    "@babel/preset-typescript": "^7.21.5",
     "@types/cheerio": "^0.22.31",
     "@types/jest": "^29.5.1",
     "@types/jquery": "^3.5.16",
     "@types/node-fetch": "^2.6.3",
+    "babel-jest": "^29.5.0",
     "cross-env": "7.0.3",
     "eslint": "8.31.0",
     "eslint-config-prettier": "8.5.0",

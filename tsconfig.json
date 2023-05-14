@@ -4,6 +4,6 @@
     "module": "CommonJS",
     "target": "ES2021",
     "strict": true,
-    "moduleResolution":"node"
+    "moduleResolution": "node"
   }
 }

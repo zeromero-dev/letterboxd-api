@@ -1,16 +1,12 @@
 {
   "compilerOptions": {
+    "target": "es6",
     "esModuleInterop": true,
-    "module": "CommonJS",
-    "target": "ES2020",
-    "strict": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
-    "outDir": "./dist",
-    "declaration": true
-    // "moduleResolution": "node"
+    "module": "commonjs",
+    "declaration": true,
+    "outDir": "dist",
+    "strict": false
   },
-  "exclude": ["test/**/*.ts", "example.ts"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }

@@ -1,26 +1,21 @@
 {
   "name": "letterboxd-api",
+  "version": "1.0.2",
   "description": "get public diary data for letterboxd users",
-  "version": "1.0.1",
-  "main": "dist/letterboxd.js",
-  "types": "dist/letterboxd.d.ts",
-  "files": [
-    "dist",
-    "esm",
-    "src"
-  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "engines": {
     "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
   },
   "scripts": {
+    "prepublish": "tsc",
     "prettier": "prettier --write .",
+    "lint": "eslint . --config .eslintrc.js",
     "example": "npx ts-node --esm test/example.ts",
-    "prepublish": "npm run example && npm run prettier && npm run lint",
+    "pretest": "npm run example && npm run prettier && npm run lint",
     "test": "npm run test:js",
     "test:js": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
-    "test:watch": "npm run test:js -- --watch",
-    "lint": "eslint . --config .eslintrc.json",
-    "build": "tsc"
+    "test:watch": "npm run test:js -- --watch"
   },
   "keywords": [
     "letterboxd"
@@ -29,28 +24,25 @@
     "type": "git",
     "url": "https://github.com/zeromero-dev/letterboxd-api"
   },
-  "author": "Roman <spiderr.roma@gmail.com> (https://zeromero.xyz/)",
+  "author": "Roman <holubenko.job@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "cheerio": "^1.0.0-rc.10",
-    "node-fetch": "^2.6.6",
-    "zod": "^3.21.4"
+    "@types/node": "^18.15.11",
+    "cheerio": "^1.0.0-rc.12",
+    "node-fetch": "^2.6.6"
   },
   "devDependencies": {
-    "@babel/core": "^7.21.8",
-    "@babel/preset-env": "^7.21.5",
-    "@babel/preset-typescript": "^7.21.5",
-    "@types/cheerio": "^0.22.31",
-    "@types/jest": "^29.5.1",
-    "@types/jquery": "^3.5.16",
-    "@types/node-fetch": "^2.6.3",
-    "babel-jest": "^29.5.0",
+    "@babel/preset-env": "^7.23.9",
+    "@babel/preset-typescript": "^7.23.3",
+    "@types/jest": "^29.5.0",
+    "@typescript-eslint/eslint-plugin": "^5.57.0",
     "cross-env": "7.0.3",
-    "eslint": "8.31.0",
+    "eslint": "^8.31.0",
     "eslint-config-prettier": "8.5.0",
     "eslint-plugin-jest": "27.1.7",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-prettier": "4.2.1",
+    "eslint-plugin-unicorn": "^46.0.0",
     "jest": "29.3.1",
     "nock": "13.2.9",
     "prettier": "2.8.1",

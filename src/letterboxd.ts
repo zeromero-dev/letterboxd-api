@@ -1,9 +1,11 @@
+import z from "zod";
 import fetch from "node-fetch";
 import { load } from "cheerio";
 
 function isListItem(element): boolean {
   // if the list path is in the url
-  if (getUri(element).includes("/list/")) {
+
+  if (getUri(element)?.includes("/list/")) {
     return true;
   }
 
@@ -18,11 +20,11 @@ function getWatchedDate(element): number {
   return +new Date(element.find("letterboxd\\:watchedDate").text());
 }
 
-function getUri(element) {
-  return element.find("link").html();
+function getUri(element: cheerio.Cheerio): string {
+  return element.find("link")?.html() ?? "";
 }
 
-function getTitleData(element): string {
+function getTitleData(element: cheerio.Cheerio): string {
   return element.find("title").text();
 }
 
@@ -30,11 +32,11 @@ function getTitle(element): string {
   return element.find("letterboxd\\:filmTitle").text();
 }
 
-function getYear(element): string {
+function getYear(element: cheerio.Cheerio): string {
   return element.find("letterboxd\\:filmYear").text();
 }
 
-function getMemberRating(element): string {
+function getMemberRating(element: cheerio.Cheerio): string {
   return element.find("letterboxd\\:memberRating").text();
 }
 
@@ -45,7 +47,7 @@ function getSpoilers(element): boolean {
   return titleData.includes(containsSpoilersString);
 }
 
-function getIsRewatch(element): boolean {
+function getIsRewatch(element: cheerio.Cheerio): boolean {
   const rewatchData = element.find("letterboxd\\:rewatch").text();
   return rewatchData === "Yes";
 }
@@ -63,7 +65,11 @@ function getRating(element) {
     score: 0, //initialise with 0
   };
 
-  const scoreToTextMap = {
+  interface ScoreToTextMap {
+    [key: string]: string;
+  }
+
+  const scoreToTextMap: ScoreToTextMap = {
     "-1.0": "None",
     0.5: "½",
     "1.0": "★",
@@ -92,7 +98,7 @@ export type Image =
     }
   | {};
 
-function getImage(element): Image {
+function getImage(element: cheerio.Cheerio): Image {
   const description = element.find("description").text();
   const $ = load(description);
 
@@ -113,7 +119,7 @@ function getImage(element): Image {
   };
 }
 
-function getReview(element): string {
+function getReview(element: cheerio.Cheerio): string {
   const description = element.find("description").text();
 
   const $ = load(description);
@@ -158,17 +164,22 @@ function getListFilms(element): ListFilms[] {
   const description = element.find("description").text();
   const $ = load(description);
 
-  const films = [];
+  const films: ListFilms[] = [];
+
   $("li a").each((i, filmElement) => {
-    films.push({
-      title: $(filmElement).text(),
-      uri: $(filmElement).attr("href"),
-    });
+    const href = $(filmElement).attr("href");
+    if (href) {
+      films.push({
+        title: $(filmElement).text(),
+        uri: href,
+      });
+    }
   });
+
   return films;
 }
 
-function getListDescription(element): string {
+function getListDescription(element: cheerio.Cheerio): string {
   const description = element.find("description").text();
   const $ = load(description);
 
@@ -193,7 +204,7 @@ function getListDescription(element): string {
   return result;
 }
 
-function getListTotalFilms(element): number {
+function getListTotalFilms(element: cheerio.Cheerio): number {
   const description = element.find("description").text();
   const $ = load(description);
 
@@ -234,7 +245,7 @@ function getListTotalFilms(element): number {
   return result;
 }
 
-function isListRanked(element): boolean {
+function isListRanked(element: cheerio.Cheerio): boolean {
   const description = element.find("description").text();
   const $ = load(description);
 
@@ -302,6 +313,7 @@ function processItem(element): Diary | List {
       year: getYear(element),
       image: getImage(element),
     },
+    // title: getTitleData(element),
     rating: getRating(element),
     review: getReview(element),
     spoilers: getSpoilers(element),

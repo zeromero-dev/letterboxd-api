@@ -5,7 +5,7 @@ import nock from "nock";
 import letterboxd from "../index";
 
 const cwd = process.cwd();
-const __dirname = path.dirname(cwd + "/letterboxd-api"); //foldername of the project 
+const __dirname = path.dirname(cwd + "/letterboxd-api"); //foldername of the project
 
 const expectedItems = [
   {

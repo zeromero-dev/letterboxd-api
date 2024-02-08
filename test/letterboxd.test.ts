@@ -1,12 +1,12 @@
 import path from "path";
 import { fileURLToPath } from "url";
-
 import nock from "nock";
+// import letterboxd from "../index.js";
+import letterboxd from "../index";
 
-import letterboxd from "../index.js";
+const cwd = process.cwd();
+const __dirname = path.dirname(cwd + "/letterboxd-api"); //foldername of the project
 
-
-// const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const expectedItems = [
   {

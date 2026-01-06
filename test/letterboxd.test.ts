@@ -1,14 +1,16 @@
-import path from "path";
-import { fileURLToPath } from "url";
-
+import { describe, it, expect, afterAll } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 import nock from "nock";
 
-import letterboxd from "../index.js";
+import letterboxd from "../src/letterboxd.js";
+import type { Diary, List } from "../src/types.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const expectedItems = [
+const expectedItems: (Diary | List)[] = [
   {
     type: "diary",
     film: {
@@ -160,62 +162,52 @@ const expectedItems = [
 const BASE_URL = "https://letterboxd.com";
 
 describe("letterboxd", () => {
-  beforeEach(() => {
-    expect.assertions(1);
-  });
-
   afterAll(() => {
     nock.restore();
   });
 
-  it("should return an error if the username is null", () => {
-    const username = null;
-    //@ts-expect-error
-    return letterboxd(username).catch((e) => {
-      expect(e.message).toEqual("No username sent as a parameter");
-    });
+  it("should return an error if the username is null", async () => {
+    // @ts-expect-error Testing invalid input
+    await expect(letterboxd(null)).rejects.toThrow(
+      "No username sent as a parameter",
+    );
   });
 
-  it("should return an error if username is not passed", () => {
-    //@ts-expect-error
-    return letterboxd().catch((e) => {
-      expect(e.message).toEqual("No username sent as a parameter");
-    });
+  it("should return an error if username is not passed", async () => {
+    // @ts-expect-error Testing invalid input
+    await expect(letterboxd()).rejects.toThrow(
+      "No username sent as a parameter",
+    );
   });
 
-  it("should return an error if the username is empty string", () => {
-    const username = "";
-
-    return letterboxd(username).catch((e) => {
-      expect(e.message).toEqual("No username sent as a parameter");
-    });
+  it("should return an error if the username is empty string", async () => {
+    await expect(letterboxd("")).rejects.toThrow(
+      "No username sent as a parameter",
+    );
   });
 
-  it("should return an error for a non-existing username", () => {
+  it("should return an error for a non-existing username", async () => {
     const username = "unknown-user";
 
     nock(BASE_URL).get(`/${username}/rss/`).reply(404);
 
-    return letterboxd(username).catch((e) => {
-      expect(e.message).toEqual(
-        `No RSS feed found for username by "${username}" at Letterboxd`
-      );
-    });
+    await expect(letterboxd(username)).rejects.toThrow(
+      `No RSS feed found for username "${username}" at Letterboxd`,
+    );
   });
 
+  it("should return an array of items for a valid username", async () => {
+    const username = "zaccolley";
+    const fixtureXml = readFileSync(
+      path.join(__dirname, "fixtures/rss-sample.xml"),
+      "utf-8",
+    );
 
-  /*Marking it as deprecated cause of the import.meta not correctly working with my tsconfig although i should fix it */
-  // it("should return an array of items for a valid username", () => {
-  //   const username = "zaccolley";
+    nock(BASE_URL).get(`/${username}/rss/`).reply(200, fixtureXml, {
+      "Content-Type": "application/xml",
+    });
 
-  //   nock(BASE_URL)
-  //     .get(`/${username}/rss/`)
-  //     .replyWithFile(200, path.join(__dirname, "/fixtures/rss-sample.xml"), {
-  //       "Content-Type": "application/xml",
-  //     });
-
-  //   return letterboxd(username).then((items) => {
-  //     expect(items).toEqual(expectedItems);
-  //   });
-  // });
+    const items = await letterboxd(username);
+    expect(items).toEqual(expectedItems);
+  });
 });

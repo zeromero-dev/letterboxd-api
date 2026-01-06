@@ -1,113 +1,144 @@
-import z from "zod";
-import fetch from "node-fetch";
-import { load } from "cheerio";
+import { load, type Cheerio } from "cheerio";
+import type { Element } from "domhandler";
+import type {
+  Diary,
+  List,
+  LetterboxdItem,
+  Rating,
+  Image,
+  ListFilm,
+} from "./types.js";
+import {
+  InvalidUsernameError,
+  UserNotFoundError,
+  FetchError,
+} from "./errors.js";
 
-function isListItem(element): boolean {
-  // if the list path is in the url
+/**
+ * Score to star text mapping for ratings.
+ * @internal
+ */
+const SCORE_TO_TEXT_MAP: Readonly<Record<string, string>> = {
+  "-1.0": "",
+  "0.5": "½",
+  "1.0": "★",
+  "1.5": "★½",
+  "2.0": "★★",
+  "2.5": "★★½",
+  "3.0": "★★★",
+  "3.5": "★★★½",
+  "4.0": "★★★★",
+  "4.5": "★★★★½",
+  "5.0": "★★★★★",
+} as const;
 
-  if (getUri(element)?.includes("/list/")) {
-    return true;
-  }
-
-  return false;
+/**
+ * Check if an item is a list based on its URL.
+ * @internal
+ */
+function isListItem(element: Cheerio<Element>): boolean {
+  const uri = getUri(element);
+  return uri.includes("/list/");
 }
 
-function getPublishedDate(element): number {
+/**
+ * Get the published date as a timestamp.
+ * @internal
+ */
+function getPublishedDate(element: Cheerio<Element>): number {
   return +new Date(element.find("pubDate").text());
 }
 
-function getWatchedDate(element): number {
+/**
+ * Get the watched date as a timestamp.
+ * @internal
+ */
+function getWatchedDate(element: Cheerio<Element>): number {
   return +new Date(element.find("letterboxd\\:watchedDate").text());
 }
 
-function getUri(element: cheerio.Cheerio): string {
-  return element.find("link")?.html() ?? "";
+/**
+ * Get the URI/link for an item.
+ * @internal
+ */
+function getUri(element: Cheerio<Element>): string {
+  return element.find("link").html() ?? "";
 }
 
-function getTitleData(element: cheerio.Cheerio): string {
+/**
+ * Get the title data from the RSS item.
+ * @internal
+ */
+function getTitleData(element: Cheerio<Element>): string {
   return element.find("title").text();
 }
 
-function getTitle(element): string {
+/**
+ * Get the film title from letterboxd namespace.
+ * @internal
+ */
+function getFilmTitle(element: Cheerio<Element>): string {
   return element.find("letterboxd\\:filmTitle").text();
 }
 
-function getYear(element: cheerio.Cheerio): string {
+/**
+ * Get the film year from letterboxd namespace.
+ * @internal
+ */
+function getYear(element: Cheerio<Element>): string {
   return element.find("letterboxd\\:filmYear").text();
 }
 
-function getMemberRating(element: cheerio.Cheerio): string {
+/**
+ * Get the member rating value.
+ * @internal
+ */
+function getMemberRating(element: Cheerio<Element>): string {
   return element.find("letterboxd\\:memberRating").text();
 }
 
-function getSpoilers(element): boolean {
+/**
+ * Check if the entry contains spoilers.
+ * @internal
+ */
+function getSpoilers(element: Cheerio<Element>): boolean {
   const titleData = getTitleData(element);
-
-  const containsSpoilersString = "(contains spoilers)";
-  return titleData.includes(containsSpoilersString);
+  return titleData.includes("(contains spoilers)");
 }
 
-function getIsRewatch(element: cheerio.Cheerio): boolean {
+/**
+ * Check if this is a rewatch.
+ * @internal
+ */
+function getIsRewatch(element: Cheerio<Element>): boolean {
   const rewatchData = element.find("letterboxd\\:rewatch").text();
   return rewatchData === "Yes";
 }
 
-export type Rating = {
-  text: string;
-  score: number;
-};
+/**
+ * Get the rating for a diary entry.
+ * @internal
+ */
+function getRating(element: Cheerio<Element>): Rating {
+  const memberRating = getMemberRating(element);
+  const score = parseFloat(memberRating) || 0;
+  const text = SCORE_TO_TEXT_MAP[memberRating] ?? "";
 
-function getRating(element) {
-  const memberRating = getMemberRating(element).toString();
-
-  const rating: Rating = {
-    text: "", //initialise with empty string
-    score: 0, //initialise with 0
-  };
-
-  interface ScoreToTextMap {
-    [key: string]: string;
-  }
-
-  const scoreToTextMap: ScoreToTextMap = {
-    "-1.0": "None",
-    0.5: "½",
-    "1.0": "★",
-    1.5: "★½",
-    "2.0": "★★",
-    2.5: "★★½",
-    "3.0": "★★★",
-    3.5: "★★★½",
-    "4.0": "★★★★",
-    4.5: "★★★★½",
-    "5.0": "★★★★★",
-  };
-
-  rating.text = scoreToTextMap[memberRating];
-  rating.score = parseFloat(memberRating);
-
-  return rating;
+  return { text, score };
 }
 
-export type Image =
-  | {
-      tiny: string;
-      small: string;
-      medium: string;
-      large: string;
-    }
-  | {};
-
-function getImage(element: cheerio.Cheerio): Image {
+/**
+ * Get the film poster image in various sizes.
+ * @internal
+ */
+function getImage(element: Cheerio<Element>): Image {
   const description = element.find("description").text();
   const $ = load(description);
 
-  // find the film poster and grab it's src
   const image = $("p img").attr("src");
 
-  // if the film has no image return no object
   if (!image) {
-    return {};
+    return null;
   }
 
   const originalImageCropRegex = /-0-.*-crop/;
@@ -119,54 +150,47 @@ function getImage(element: cheerio.Cheerio): Image {
   };
 }
 
-function getReview(element: cheerio.Cheerio): string {
+/**
+ * Get the review text for a diary entry.
+ * @internal
+ */
+function getReview(element: Cheerio<Element>): string {
   const description = element.find("description").text();
-
   const $ = load(description);
 
   const reviewParagraphs = $("p");
 
-  let review = "";
-
-  // if there is no review return the item
   if (reviewParagraphs.length <= 0) {
-    return review;
+    return "";
   }
 
-  // the rest of description is a review, if there is no review the string 'Watched on ' will appear
-  // this assumes you didn't write the 'Watched on ' string in your review... weak
   if (reviewParagraphs.last().text().includes("Watched on ")) {
-    return review;
+    return "";
   }
 
-  // loop through paragraphs
-  reviewParagraphs.each((i, element) => {
-    const reviewParagraph = $(element).text();
+  let review = "";
+  reviewParagraphs.each((_i, paragraphElement) => {
+    const reviewParagraph = $(paragraphElement).text();
 
-    // only add paragaphs that are the review
     if (reviewParagraph !== "This review may contain spoilers.") {
       review += reviewParagraph + "\n";
     }
   });
 
-  // tidy up and add review to the item
-  review = review.trim();
-
-  return review;
+  return review.trim();
 }
 
-export type ListFilms = {
-  title: string;
-  uri: string;
-};
-
-function getListFilms(element): ListFilms[] {
+/**
+ * Get the films in a list.
+ * @internal
+ */
+function getListFilms(element: Cheerio<Element>): ListFilm[] {
   const description = element.find("description").text();
   const $ = load(description);
 
-  const films: ListFilms[] = [];
+  const films: ListFilm[] = [];
 
-  $("li a").each((i, filmElement) => {
+  $("li a").each((_i, filmElement) => {
     const href = $(filmElement).attr("href");
     if (href) {
       films.push({
@@ -179,22 +203,23 @@ function getListFilms(element): ListFilms[] {
   return films;
 }
 
-function getListDescription(element: cheerio.Cheerio): string {
+/**
+ * Get the description for a list.
+ * @internal
+ */
+function getListDescription(element: Cheerio<Element>): string {
   const description = element.find("description").text();
   const $ = load(description);
 
-  let result = "";
-
-  // if there are no paragraphs in the description there isnt one
   if ($("p").length <= 0) {
-    return result;
+    return "";
   }
 
-  $("p").each((i, element) => {
-    // we'll assume descriptions dont have the link text in
-    const text = $(element).text();
+  let result = "";
+  $("p").each((_i, paragraphElement) => {
+    const text = $(paragraphElement).text();
     const isntPlusMoreParagraph = !text.includes(
-      "View the full list on Letterboxd"
+      "View the full list on Letterboxd",
     );
     if (isntPlusMoreParagraph) {
       result = text;
@@ -204,24 +229,26 @@ function getListDescription(element: cheerio.Cheerio): string {
   return result;
 }
 
-function getListTotalFilms(element: cheerio.Cheerio): number {
+/**
+ * Get the total number of films in a list (including those not shown).
+ * @internal
+ */
+function getListTotalFilms(element: Cheerio<Element>): number {
   const description = element.find("description").text();
   const $ = load(description);
 
   const films = getListFilms(element);
-
   let result = films.length;
 
-  // if there are no paragraphs in the description there isnt one
   if ($("p").length <= 0) {
     return result;
   }
 
-  $("p").each((i, paragraphElement) => {
+  $("p").each((_i, paragraphElement) => {
     const text = $(paragraphElement).text();
 
     const isPlusMoreParagraph = text.includes(
-      "View the full list on Letterboxd"
+      "View the full list on Letterboxd",
     );
     if (isPlusMoreParagraph) {
       const startNumberPositionString = "...plus ";
@@ -235,7 +262,7 @@ function getListTotalFilms(element: cheerio.Cheerio): number {
 
       const numberString = text.substring(
         startNumberPosition,
-        endNumberPosition
+        endNumberPosition,
       );
 
       result += parseInt(numberString, 10) || 0;
@@ -245,47 +272,22 @@ function getListTotalFilms(element: cheerio.Cheerio): number {
   return result;
 }
 
-function isListRanked(element: cheerio.Cheerio): boolean {
+/**
+ * Check if a list is ranked (ordered).
+ * @internal
+ */
+function isListRanked(element: Cheerio<Element>): boolean {
   const description = element.find("description").text();
   const $ = load(description);
 
-  const isOrderedListPresent = !!$("ol").length;
-  return isOrderedListPresent;
+  return !!$("ol").length;
 }
 
-export type Diary = {
-  type: "diary";
-  date: {
-    published: number;
-    watched?: number;
-  };
-  film: {
-    title: string;
-    year: string;
-    image: Image;
-  };
-  rating: Rating;
-  review: string;
-  spoilers: boolean;
-  isRewatch: boolean;
-  uri: string;
-};
-
-export type List = {
-  type: "list";
-  date: {
-    published: number;
-  };
-  title: string;
-  description: string;
-  ranked: boolean;
-  films: ListFilms[];
-  totalFilms: number;
-  uri: string;
-};
-
-function processItem(element): Diary | List {
-  // there are two types of items: lists and diary entries
+/**
+ * Process an RSS item into a Diary or List object.
+ * @internal
+ */
+function processItem(element: Cheerio<Element>): Diary | List {
   if (isListItem(element)) {
     return {
       type: "list",
@@ -301,7 +303,6 @@ function processItem(element): Diary | List {
     };
   }
 
-  // otherwise return a diary entry
   return {
     type: "diary",
     date: {
@@ -309,11 +310,10 @@ function processItem(element): Diary | List {
       watched: getWatchedDate(element),
     },
     film: {
-      title: getTitle(element),
+      title: getFilmTitle(element),
       year: getYear(element),
       image: getImage(element),
     },
-    // title: getTitleData(element),
     rating: getRating(element),
     review: getReview(element),
     spoilers: getSpoilers(element),
@@ -322,45 +322,69 @@ function processItem(element): Diary | List {
   };
 }
 
-function invalidUsername(username: string): boolean {
-  return !username || username.trim().length <= 0;
+/**
+ * Check if a username is invalid.
+ * @internal
+ */
+function isInvalidUsername(username: string | null | undefined): boolean {
+  return !username || username.trim().length === 0;
 }
 
-function getDiaryData(username: string): Promise<Diary[] | List[]> {
+/**
+ * Fetch and parse the RSS feed for a user.
+ * @internal
+ */
+async function fetchUserFeed(username: string): Promise<LetterboxdItem[]> {
   const uri = `https://letterboxd.com/${username}/rss/`;
 
-  return fetch(uri)
-    .then((response) => {
-      // if 404 we're assuming that the username does not exist or have a public RSS feed
-      if (response.status === 404) {
-        throw new Error(
-          `No RSS feed found for username by "${username}" at Letterboxd`
-        );
-      } else if (response.status !== 200) {
-        throw new Error("Something went wrong");
-      }
+  const response = await fetch(uri);
 
-      return response.text();
-    })
-    .then((xml) => {
-      const $ = load(xml, { xmlMode: true });
-
-      const items: List[] | Diary[] = [];
-
-      $("item").each((i, element) => {
-        items[i] = processItem($(element));
-      });
-
-      return items;
-    });
-}
-
-function letterboxd(username: string): Promise<Diary[] | List[]> {
-  if (invalidUsername(username)) {
-    return Promise.reject(new Error("No username sent as a parameter"));
+  if (response.status === 404) {
+    throw new UserNotFoundError(username);
   }
 
-  return getDiaryData(username);
+  if (!response.ok) {
+    throw new FetchError(response.status);
+  }
+
+  const xml = await response.text();
+  const $ = load(xml, { xmlMode: true });
+
+  const items: LetterboxdItem[] = [];
+
+  $("item").each((_i, element) => {
+    items.push(processItem($(element)));
+  });
+
+  return items;
 }
 
-export default letterboxd;
+/**
+ * Fetches public diary entries and lists for a Letterboxd user.
+ *
+ * @param username - The Letterboxd username to fetch data for
+ * @returns Promise resolving to an array of diary entries and lists
+ * @throws {InvalidUsernameError} When the username is empty or invalid
+ * @throws {UserNotFoundError} When the user doesn't exist or has no public RSS feed
+ * @throws {FetchError} When the API returns an unexpected error
+ *
+ * @example
+ * ```typescript
+ * import letterboxd, { isDiary, isList } from "letterboxd-api";
+ *
+ * const items = await letterboxd("username");
+ * const diaries = items.filter(isDiary);
+ * const lists = items.filter(isList);
+ * ```
+ *
+ * @public
+ */
+export default async function letterboxd(
+  username: string,
+): Promise<readonly LetterboxdItem[]> {
+  if (isInvalidUsername(username)) {
+    throw new InvalidUsernameError();
+  }
+
+  return fetchUserFeed(username);
+}

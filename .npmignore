@@ -1,1 +1,9 @@
 test/
+coverage/
+.github/
+*.config.js
+*.config.ts
+tsconfig.json
+.nvmrc
+.gitignore
+src/

@@ -1,47 +1,23 @@
-export declare type Rating = {
-  text: string;
-  score: number;
-};
-export declare type Image =
-  | {
-      tiny: string;
-      small: string;
-      medium: string;
-      large: string;
-    }
-  | {};
-export declare type ListFilms = {
-  title: string;
-  uri: string;
-};
-export declare type Diary = {
-  type: "diary";
-  date: {
-    published: number;
-    watched?: number;
-  };
-  film: {
-    title: string;
-    year: string;
-    image: Image;
-  };
-  rating: Rating;
-  review: string;
-  spoilers: boolean;
-  isRewatch: boolean;
-  uri: string;
-};
-export declare type List = {
-  type: "list";
-  date: {
-    published: number;
-  };
-  title: string;
-  description: string;
-  ranked: boolean;
-  films: ListFilms[];
-  totalFilms: number;
-  uri: string;
-};
-declare function letterboxd(username: string): Promise<Diary[] | List[]>;
-export default letterboxd;
+import type { LetterboxdItem } from "./types.js";
+/**
+ * Fetches public diary entries and lists for a Letterboxd user.
+ *
+ * @param username - The Letterboxd username to fetch data for
+ * @returns Promise resolving to an array of diary entries and lists
+ * @throws {InvalidUsernameError} When the username is empty or invalid
+ * @throws {UserNotFoundError} When the user doesn't exist or has no public RSS feed
+ * @throws {FetchError} When the API returns an unexpected error
+ *
+ * @example
+ * ```typescript
+ * import letterboxd, { isDiary, isList } from "letterboxd-api";
+ *
+ * const items = await letterboxd("username");
+ * const diaries = items.filter(isDiary);
+ * const lists = items.filter(isList);
+ * ```
+ *
+ * @public
+ */
+export default function letterboxd(username: string): Promise<readonly LetterboxdItem[]>;
+//# sourceMappingURL=letterboxd.d.ts.map
